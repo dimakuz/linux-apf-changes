@@ -550,6 +550,24 @@ TRACE_EVENT(sched_wake_idle_without_ipi,
 
 	TP_printk("cpu=%d", __entry->cpu)
 );
+
+/* Dimak */
+TRACE_EVENT(kvm_will_halt,
+
+	TP_PROTO(int preempt),
+
+	TP_ARGS(preempt),
+
+	TP_STRUCT__entry(
+		__field(	int,	preempt	)
+	),
+
+	TP_fast_assign(
+		__entry->preempt	= preempt;
+	),
+
+	TP_printk("preempt_count=%d", __entry->preempt)
+);
 #endif /* _TRACE_SCHED_H */
 
 /* This part must be outside protection */

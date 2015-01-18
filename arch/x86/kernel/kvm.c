@@ -46,6 +46,8 @@
 #include <asm/hypervisor.h>
 #include <asm/kvm_guest.h>
 
+#include <trace/events/sched.h>
+
 static int kvmapf = 1;
 
 static int parse_no_kvmapf(char *arg)
@@ -140,6 +142,9 @@ void kvm_async_pf_task_wait(u32 token)
 	n.token = token;
 	n.cpu = smp_processor_id();
 	n.halted = is_idle_task(current) || preempt_count() > 1;
+	if (n.halted) {
+		trace_kvm_will_halt(preempt_count());
+	}
 	init_waitqueue_head(&n.wq);
 	hlist_add_head(&n.link, &b->list);
 	spin_unlock(&b->lock);
