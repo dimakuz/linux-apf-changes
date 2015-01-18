@@ -2,6 +2,18 @@
 # Makefile for the linux memory manager.
 #
 
+CFLAGS_REMOVE_filemap.o = -O3
+CFLAGS_filemap.o = -Og -g3 -ftree-ter
+
+CFLAGS_REMOVE_memory.o = -O3
+CFLAGS_memory.o = -Og -g3 -ftree-ter
+
+CFLAGS_REMOVE_page_alloc.o = -O3
+CFLAGS_page_alloc.o = -Og -g3 -ftree-ter
+
+CFLAGS_REMOVE_iov_iter.o = -O3
+CFLAGS_iov_iter.o = -O0 -g3
+
 mmu-y			:= nommu.o
 mmu-$(CONFIG_MMU)	:= fremap.o gup.o highmem.o madvise.o memory.o mincore.o \
 			   mlock.o mmap.o mprotect.o mremap.o msync.o rmap.o \

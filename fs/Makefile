@@ -5,6 +5,12 @@
 # Rewritten to use lists instead of if-statements.
 # 
 
+CFLAGS_REMOVE_mpage.o = -O3
+CFLAGS_mpage.o = -O0 -g3
+
+CFLAGS_REMOVE_buffer.o = -O3
+CFLAGS_buffer.o = -Og -g3
+
 obj-y :=	open.o read_write.o file_table.o super.o \
 		char_dev.o stat.o exec.o pipe.o namei.o fcntl.o \
 		ioctl.o readdir.o select.o dcache.o inode.o \

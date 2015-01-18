@@ -83,6 +83,7 @@ static inline void kunmap(struct page *page)
 
 static inline void *kmap_atomic(struct page *page)
 {
+	try_prefault_page(page);
 	pagefault_disable();
 	return page_address(page);
 }
