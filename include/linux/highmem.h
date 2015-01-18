@@ -7,8 +7,26 @@
 #include <linux/mm.h>
 #include <linux/uaccess.h>
 #include <linux/hardirq.h>
+#include <linux/pagemap.h>
 
 #include <asm/cacheflush.h>
+
+static inline int try_prefault_addr(const void *ptr) {
+	char c;
+
+	if (preempt_count())
+		return -EAGAIN;
+
+	if(__get_user(c, (const char __user *) ptr))
+		return -EFAULT;
+	return 0;
+}
+
+static inline int try_prefault_page(const struct page *page)
+{
+	return try_prefault_addr(page_address(page));
+}
+
 
 #ifndef ARCH_HAS_FLUSH_ANON_PAGE
 static inline void flush_anon_page(struct vm_area_struct *vma, struct page *page, unsigned long vmaddr)
