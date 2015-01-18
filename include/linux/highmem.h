@@ -149,7 +149,9 @@ do {                                                            \
 #ifndef clear_user_highpage
 static inline void clear_user_highpage(struct page *page, unsigned long vaddr)
 {
-	void *addr = kmap_atomic(page);
+	void *addr;
+	try_prefault_page(page);
+	addr = kmap_atomic(page);
 	clear_user_page(addr, vaddr, page);
 	kunmap_atomic(addr);
 }
@@ -202,7 +204,11 @@ alloc_zeroed_user_highpage_movable(struct vm_area_struct *vma,
 
 static inline void clear_highpage(struct page *page)
 {
-	void *kaddr = kmap_atomic(page);
+	void *kaddr;
+
+	try_prefault_page(page);
+
+	kaddr = kmap_atomic(page);
 	clear_page(kaddr);
 	kunmap_atomic(kaddr);
 }
@@ -211,7 +217,11 @@ static inline void zero_user_segments(struct page *page,
 	unsigned start1, unsigned end1,
 	unsigned start2, unsigned end2)
 {
-	void *kaddr = kmap_atomic(page);
+	void *kaddr;
+
+	try_prefault_page(page);
+
+	kaddr = kmap_atomic(page);
 
 	BUG_ON(end1 > PAGE_SIZE || end2 > PAGE_SIZE);
 
@@ -244,6 +254,9 @@ static inline void copy_user_highpage(struct page *to, struct page *from,
 {
 	char *vfrom, *vto;
 
+	try_prefault_page(from);
+	try_prefault_page(to);
+
 	vfrom = kmap_atomic(from);
 	vto = kmap_atomic(to);
 	copy_user_page(vto, vfrom, vaddr, to);
@@ -256,6 +269,9 @@ static inline void copy_user_highpage(struct page *to, struct page *from,
 static inline void copy_highpage(struct page *to, struct page *from)
 {
 	char *vfrom, *vto;
+
+	try_prefault_page(from);
+	try_prefault_page(to);
 
 	vfrom = kmap_atomic(from);
 	vto = kmap_atomic(to);
