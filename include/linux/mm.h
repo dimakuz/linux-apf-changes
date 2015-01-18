@@ -1494,6 +1494,7 @@ static inline void pgtable_page_dtor(struct page *page)
 ({							\
 	spinlock_t *__ptl = pte_lockptr(mm, pmd);	\
 	pte_t *__pte = pte_offset_map(pmd, address);	\
+ 	try_prefault_addr(__pte);			\
 	*(ptlp) = __ptl;				\
 	spin_lock(__ptl);				\
 	__pte;						\
