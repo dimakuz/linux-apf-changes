@@ -25,6 +25,8 @@ static size_t copy_page_to_iter_iovec(struct page *page, size_t offset, size_t b
 	copy = min(bytes, iov->iov_len - skip);
 
 	if (!fault_in_pages_writeable(buf, copy)) {
+		try_prefault_page(page);
+
 		kaddr = kmap_atomic(page);
 		from = kaddr + offset;
 
@@ -106,6 +108,8 @@ static size_t copy_page_from_iter_iovec(struct page *page, size_t offset, size_t
 	copy = min(bytes, iov->iov_len - skip);
 
 	if (!fault_in_pages_readable(buf, copy)) {
+		try_prefault_page(page);
+
 		kaddr = kmap_atomic(page);
 		to = kaddr + offset;
 
@@ -199,6 +203,7 @@ static size_t copy_from_user_atomic_iovec(struct page *page,
 	char *kaddr;
 	size_t copied;
 
+	try_prefault_page(page);
 	kaddr = kmap_atomic(page);
 	if (likely(i->nr_segs == 1)) {
 		int left;
@@ -356,7 +361,7 @@ static ssize_t get_pages_alloc_iovec(struct iov_iter *i,
 	len += *start = addr & (PAGE_SIZE - 1);
 	addr &= ~(PAGE_SIZE - 1);
 	n = (len + PAGE_SIZE - 1) / PAGE_SIZE;
-	
+
 	p = kmalloc(n * sizeof(struct page *), GFP_KERNEL);
 	if (!p)
 		p = vmalloc(n * sizeof(struct page *));
@@ -412,6 +417,20 @@ static void memcpy_to_page(struct page *page, size_t offset, char *from, size_t 
 	kunmap_atomic(to);
 }
 
+static void try_prefault_bvec_pages(struct bio_vec *bvec, size_t skip, size_t len) {
+	try_prefault_page(bvec->bv_page);
+	if (len < (bvec->bv_len - skip))
+		return;
+	len -= bvec->bv_len - skip;
+	while (len) {
+		bvec++;
+		if (!bvec->bv_len)
+			continue;
+		try_prefault_page(bvec->bv_page);
+		len -= min(len, bvec->bv_len);
+	}
+}
+
 static size_t copy_page_to_iter_bvec(struct page *page, size_t offset, size_t bytes,
 			 struct iov_iter *i)
 {
@@ -429,6 +448,9 @@ static size_t copy_page_to_iter_bvec(struct page *page, size_t offset, size_t by
 	bvec = i->bvec;
 	skip = i->iov_offset;
 	copy = min_t(size_t, bytes, bvec->bv_len - skip);
+
+	//try_prefault_page(page);
+	//try_prefault_bvec_pages(bvec, skip, bytes);
 
 	kaddr = kmap_atomic(page);
 	from = kaddr + offset;
@@ -473,6 +495,9 @@ static size_t copy_page_from_iter_bvec(struct page *page, size_t offset, size_t 
 	bvec = i->bvec;
 	skip = i->iov_offset;
 
+	//try_prefault_page(page);
+	//try_prefault_bvec_pages(bvec, skip, bytes);
+
 	kaddr = kmap_atomic(page);
 
 	to = kaddr + offset;
@@ -512,6 +537,9 @@ static size_t copy_from_user_bvec(struct page *page,
 	size_t left;
 	const struct bio_vec *bvec;
 	size_t base = i->iov_offset;
+
+	//try_prefault_page(page);
+	//try_prefault_bvec_pages(i->bvec, base, bytes);
 
 	kaddr = kmap_atomic(page);
 	for (left = bytes, bvec = i->bvec; left; bvec++, base = 0) {
